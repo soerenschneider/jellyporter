@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/mattn/go-sqlite3 v1.14.28
-	github.com/prometheus/client_golang v1.20.5
+	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/zerolog v1.34.0
 	go.uber.org/multierr v1.11.0
 	gopkg.in/yaml.v3 v3.0.1
