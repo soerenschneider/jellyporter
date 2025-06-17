@@ -1,0 +1,38 @@
+---
+version: "2"
+sql:
+  - engine: "sqlite"
+    queries:
+      - "queries/changelog.sql"
+      - "queries/episodes.sql"
+      - "queries/movies.sql"
+      - "queries/state.sql"
+    schema: "migrations"
+    gen:
+      go:
+        package: "generated"
+        emit_exported_queries: true
+        out: "generated"
+        overrides:
+          - db_type: "pg_catalog.timestamp"
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
+            nullable: true
+          - db_type: "pg_catalog.timestamp"
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: false
+            nullable: false
+          - db_type: "text"
+            go_type:
+              type: "string"
+              pointer: false
+            nullable: true
+          - db_type: "NullInt64"
+            go_type:
+              type: "int64"
+              pointer: false
+            nullable: false

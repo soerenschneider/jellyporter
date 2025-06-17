@@ -1,0 +1,12 @@
+/.idea
+/*.iml
+/contrib/configs/config.yaml
+/builds
+/jellyporter
+/coverage.*
+
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*

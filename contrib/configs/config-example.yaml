@@ -1,0 +1,19 @@
+---
+clients:
+  dd:
+    url: "https://jellyfin1.your.tld"
+    api_key: ...
+    user: "soeren"
+  ez:
+    url: "https://jellyfin2.your.tld"
+    api_key: ...
+    user: "soeren"
+
+events:
+  webhook:
+    addr: 127.0.0.1:8080
+
+database:
+  path: "/data/jellyporter.db"
+
+metrics_addr: "127.0.0.1:6666"
