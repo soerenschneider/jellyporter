@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/go-playground/validator/v10 v10.26.0
-	github.com/hashicorp/go-retryablehttp v0.7.7
+	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/common v0.62.0
