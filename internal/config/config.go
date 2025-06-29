@@ -39,9 +39,23 @@ type Events struct {
 }
 
 type JellyfinServerConfig struct {
-	Address string `yaml:"url" validate:"http_url"`
-	User    string `yaml:"user" validate:"alphanum"`
-	ApiKey  string `yaml:"api_key" validate:"alphanum"`
+	Address    string `yaml:"url" validate:"http_url"`
+	User       string `yaml:"user" validate:"alphanum"`
+	ApiKey     string `yaml:"api_key" validate:"required_without=ApiKeyFile,alphanum"`
+	ApiKeyFile string `yaml:"api_key_file" validate:"required_without=ApiKey,file"`
+}
+
+func (c *JellyfinServerConfig) GetApiKey() (string, error) {
+	if c.ApiKey != "" {
+		return c.ApiKey, nil
+	}
+
+	data, err := os.ReadFile(c.ApiKeyFile)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
 }
 
 func LoadConfig(path string) (*Config, error) {

@@ -83,7 +83,11 @@ func main() {
 
 	clients := make(map[string]internal.JellyfinClient)
 	for name, c := range cfg.Clients {
-		clients[name] = jellyfin.NewJellyfinClient(c.Address, c.ApiKey, c.User)
+		apiKey, err := c.GetApiKey()
+		if err != nil {
+			log.Fatal().Err(err).Str("server", name).Msg("could not gather apikey")
+		}
+		clients[name] = jellyfin.NewJellyfinClient(c.Address, apiKey, c.User)
 	}
 
 	db, err := sqlite.New(cfg.Database.Path)
