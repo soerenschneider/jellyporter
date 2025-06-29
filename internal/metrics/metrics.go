@@ -51,6 +51,27 @@ var (
 		Help:      "Total amount of requests",
 	})
 
+	EventSourceRequestsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: "events",
+		Name:      "requests_total",
+		Help:      "Total amount of requests",
+	}, []string{"source"})
+
+	EventSourceCooldownPhases = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: "events",
+		Name:      "cooldown_phases_total",
+		Help:      "Total amount of cooldown phases because of too frequent requests from event sources",
+	})
+
+	EventSourceErrorsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: "events",
+		Name:      "request_errors_total",
+		Help:      "Errors while sending requests to jellyfin",
+	}, []string{"source"})
+
 	RequestErrorsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: "requests",

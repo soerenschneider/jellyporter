@@ -19,6 +19,8 @@ import (
 	"go.uber.org/multierr"
 )
 
+const defaultCooldownDuration = 30 * time.Second
+
 type JellyfinClient interface {
 	GetUserId(ctx context.Context) (string, error)
 	GetItems(ctx context.Context, userID string, opts jellyfin.ItemQueryOpts) (*jellyfin.ItemsResponse, error)
@@ -41,6 +43,10 @@ type App struct {
 	db      LibraryDb
 
 	mutex sync.Mutex
+
+	// cooldown is a cooldown phase for when receiving a burst of requests from the webhook
+	cooldown      atomic.Bool
+	cooldownTimer time.Duration
 
 	// counter tracks invocations to control fetching deltas or full data from Jellyfin
 	counter                 atomic.Int32
@@ -65,6 +71,7 @@ func NewApp(clients map[string]JellyfinClient, db LibraryDb, cfg *config.Config)
 		clients: clients,
 		db:      db,
 
+		cooldownTimer:           defaultCooldownDuration,
 		syncIntervalMinutes:     int32(cfg.SyncIntervalMinutes),     //nolint G115
 		fullSyncIntervalMinutes: int32(cfg.FullSyncIntervalMinutes), //nolint G115
 	}
@@ -86,8 +93,30 @@ func (a *App) Sync(ctx context.Context, wg *sync.WaitGroup, hook chan events.Eve
 	for {
 		select {
 		case event := <-hook:
-			log.Info().Str("source", event.Source).Str("metadata", event.Metadata).Msg("Received external request to sync data")
-			_ = a.SyncOnce(ctx)
+			metrics.EventSourceRequestsTotal.WithLabelValues(event.Source).Inc()
+			if a.cooldown.CompareAndSwap(false, true) {
+				metrics.EventSourceCooldownPhases.Inc()
+				log.Info().Str("source", event.Source).Str("metadata", event.Metadata).Msg("Received external request to sync data")
+
+				cooldownCtx, cancel := context.WithTimeout(ctx, a.cooldownTimer)
+				go func() {
+					defer cancel()
+					<-cooldownCtx.Done()
+					a.cooldown.Store(false)
+				}()
+
+				select {
+				case event.Response <- nil:
+					// nop
+				case <-time.After(1 * time.Second):
+					log.Warn().Msg("hanging goroutine")
+				}
+				_ = a.SyncOnce(ctx)
+			} else {
+				metrics.EventSourceErrorsTotal.WithLabelValues(event.Source).Inc()
+				log.Debug().Str("source", event.Source).Str("metadata", event.Metadata).Msgf("Not initiating sync due to having received too many requests in the last %v", a.cooldownTimer)
+				event.Response <- errors.New("too many requests")
+			}
 		case <-ticker.C:
 			_ = a.SyncOnce(ctx)
 		case <-ctx.Done():

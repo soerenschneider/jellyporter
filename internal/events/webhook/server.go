@@ -70,14 +70,34 @@ func (w *WebhookServer) Listen(ctx context.Context, eventChan chan events.EventS
 		syncRequest := events.EventSyncRequest{
 			Source:   "webhook",
 			Metadata: getIP(r),
+			Response: make(chan error),
 		}
 
 		if isShuttingDown.Load() {
 			http.Error(w, "Server is shutting down", http.StatusServiceUnavailable)
 			return
 		}
-		eventChan <- syncRequest
-		w.WriteHeader(http.StatusOK)
+
+		select {
+		case eventChan <- syncRequest:
+			// proceed
+		case <-time.After(500 * time.Millisecond):
+			http.Error(w, "Server busy, try again later", http.StatusServiceUnavailable)
+			return
+		}
+
+		select {
+		case err := <-syncRequest.Response:
+			if err != nil {
+				http.Error(w, "Too many requests", http.StatusTooManyRequests)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			return
+		case <-time.After(5 * time.Second):
+			http.Error(w, "Timeout waiting for event processing", http.StatusGatewayTimeout)
+			return
+		}
 	}
 	mux.HandleFunc(w.path, handler)
 
