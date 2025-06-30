@@ -41,8 +41,8 @@ type Events struct {
 type JellyfinServerConfig struct {
 	Address    string `yaml:"url" validate:"http_url"`
 	User       string `yaml:"user" validate:"alphanum"`
-	ApiKey     string `yaml:"api_key" validate:"required_without=ApiKeyFile,alphanum"`
-	ApiKeyFile string `yaml:"api_key_file" validate:"required_without=ApiKey,file"`
+	ApiKey     string `yaml:"api_key" validate:"required_without=ApiKeyFile,omitempty,alphanum"`
+	ApiKeyFile string `yaml:"api_key_file" validate:"required_without=ApiKey,omitempty,file"`
 }
 
 func (c *JellyfinServerConfig) GetApiKey() (string, error) {
