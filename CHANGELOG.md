@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/soerenschneider/jellyporter/compare/v1.0.0...v1.1.0) (2025-07-02)
+
+
+### Features
+
+* delete items that have been removed from jellyfin ([690cfdf](https://github.com/soerenschneider/jellyporter/commit/690cfdf4387dfa975459a032a304056fc6a860fa))
+
+
+### Bug Fixes
+
+* fix config validation ([0391132](https://github.com/soerenschneider/jellyporter/commit/0391132a5e2c8ad36d2249b363783806da1c4eac))
+
 ## 1.0.0 (2025-06-29)
 
 
