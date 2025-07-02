@@ -33,6 +33,7 @@ type LibraryDb interface {
 
 	GetMoviesWithUpdatedUserData(ctx context.Context, server string) ([]sqlite.ItemWithUpdatedUserData, error)
 	GetEpisodesWithUpdatedUserData(ctx context.Context, server string) ([]sqlite.ItemWithUpdatedUserData, error)
+	RemoveItemsNotSeenSince(ctx context.Context, server string, itemType jellyfin.ItemType, since time.Time) error
 
 	UpsertState(ctx context.Context, server string, itemType jellyfin.ItemType, ts time.Time) error
 	GetState(ctx context.Context, server string, itemType jellyfin.ItemType) (time.Time, error)
@@ -190,6 +191,8 @@ func (a *App) fetchUpdatesFromJellyfin(ctx context.Context, itemType jellyfin.It
 }
 
 func (a *App) fetchUpdateFromJellyfin(ctx context.Context, itemType jellyfin.ItemType, server string, client JellyfinClient) error {
+	start := time.Now()
+
 	userId, err := client.GetUserId(ctx)
 	if err != nil {
 		return err
@@ -211,7 +214,11 @@ func (a *App) fetchUpdateFromJellyfin(ctx context.Context, itemType jellyfin.Ite
 		metrics.TotalItemsTimestamp.WithLabelValues(server, strings.ToLower(string(itemType))).SetToCurrentTime()
 	}
 	log.Info().Str("server", server).Str("type", string(itemType)).Msgf("Fetched %d items from server", len(items.Items))
-	return a.db.InsertItems(ctx, server, itemType, items.Items)
+	if err = a.db.InsertItems(ctx, server, itemType, items.Items); err != nil {
+		return err
+	}
+
+	return a.db.RemoveItemsNotSeenSince(ctx, server, itemType, start)
 }
 
 func (a *App) synchronizeUpdatedUserData(ctx context.Context, itemType jellyfin.ItemType) error {

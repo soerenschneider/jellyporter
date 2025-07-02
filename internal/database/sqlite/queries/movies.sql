@@ -1,6 +1,6 @@
 -- name: GetMovieWithGreatestWatchedDate :many
 -- Get movies with greatest watched_date among identical movies, excluding specified server
-WITH episode_groups AS (
+WITH movie_groups AS (
     -- Step 1: Normalize all movie data and create matching keys
     -- This CTE standardizes data types and creates a unique identifier for grouping identical movies
     SELECT
@@ -33,7 +33,7 @@ WITH episode_groups AS (
              name,
              watched_date as local_watched_date,
              watched_progress as local_watched_progress
-         FROM episode_groups
+         FROM movie_groups
          WHERE server = sqlc.arg(server)
      ),
      max_remote_movies AS (
@@ -42,7 +42,7 @@ WITH episode_groups AS (
          SELECT
              match_key,
              MAX(watched_date) as max_remote_watched_date
-         FROM episode_groups
+         FROM movie_groups
          WHERE server != sqlc.arg(server)
     AND watched_date > 0  -- Only consider movies that have been watched
 GROUP BY match_key
@@ -58,7 +58,7 @@ SELECT DISTINCT
     FIRST_VALUE(eg.watched_progress) OVER (PARTITION BY eg.match_key ORDER BY eg.watched_date DESC) as remote_watched_progress,
     FIRST_VALUE(eg.watched_position_ticks) OVER (PARTITION BY eg.match_key ORDER BY eg.watched_date DESC) as watched_position_ticks,
     FIRST_VALUE(eg.is_favorite) OVER (PARTITION BY eg.match_key ORDER BY eg.watched_date DESC) as is_favorite
-FROM episode_groups eg
+FROM movie_groups eg
     INNER JOIN max_remote_movies mre ON eg.match_key = mre.match_key
     AND eg.watched_date = mre.max_remote_watched_date
 WHERE eg.server != sqlc.arg(server)
@@ -89,7 +89,8 @@ INSERT INTO
         watched_date,
         watched_progress,
         watched_position_ticks,
-        is_favorite
+        is_favorite,
+        last_seen
     )
 VALUES (
         sqlc.arg(server),
@@ -101,7 +102,8 @@ VALUES (
         sqlc.arg(watched_date),
         sqlc.arg(watched_progress),
         sqlc.arg(watched_position_ticks),
-        sqlc.arg(is_favorite)
+        sqlc.arg(is_favorite),
+        strftime('%s', 'now')
 )
 ON CONFLICT(server, local_id) DO UPDATE SET
         name = excluded.name,
@@ -111,4 +113,13 @@ ON CONFLICT(server, local_id) DO UPDATE SET
         watched_date = excluded.watched_date,
         watched_progress  = excluded.watched_progress,
         watched_position_ticks  = excluded.watched_position_ticks,
-        is_favorite = excluded.is_favorite;
+        is_favorite = excluded.is_favorite,
+        last_seen = strftime('%s', 'now');
+
+-- name: RemoveMoviesNotSeenSince :exec
+DELETE FROM
+    movies
+WHERE
+    server = sqlc.arg(server)
+AND
+    last_seen < sqlc.arg(since);

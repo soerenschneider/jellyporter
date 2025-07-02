@@ -3,17 +3,17 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
 	"unicode"
 
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/jellyporter/internal/database/sqlite/generated"
 	"github.com/soerenschneider/jellyporter/internal/jellyfin"
 	"github.com/soerenschneider/jellyporter/internal/metrics"
-
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/rs/zerolog/log"
 )
 
 type SQLiteJellyDb struct {
@@ -72,6 +72,53 @@ func (q *SQLiteJellyDb) GetMoviesWithUpdatedUserData(ctx context.Context, server
 func (q *SQLiteJellyDb) InsertMovie(ctx context.Context, server string, movie jellyfin.Item) error {
 	params := MovieToInsertMovieParam(server, movie)
 	return q.generated.InsertMovie(ctx, params)
+}
+
+func (q *SQLiteJellyDb) RemoveItemsNotSeenSince(ctx context.Context, server string, itemType jellyfin.ItemType, notSeenSince time.Time) error {
+	if notSeenSince.IsZero() {
+		return errors.New("notSeenSince must not be zero")
+	}
+
+	log.Info().Int64("not_seen_since", notSeenSince.Unix()).Msgf("Deleting %ss not seen since %v", itemType, notSeenSince.Format("2006-01-02 15:04:05"))
+
+	switch itemType {
+	case jellyfin.ItemEpisode:
+		return q.RemoveEpisodesNotSeenSince(ctx, server, notSeenSince)
+	case jellyfin.ItemMovie:
+		return q.RemoveMoviesNotSeenSince(ctx, server, notSeenSince)
+	default:
+		return fmt.Errorf("unknown itemtype: %v", itemType)
+	}
+}
+
+func (q *SQLiteJellyDb) RemoveMoviesNotSeenSince(ctx context.Context, server string, since time.Time) error {
+	start := time.Now()
+
+	if err := q.generated.RemoveMoviesNotSeenSince(ctx, generated.RemoveMoviesNotSeenSinceParams{
+		Server: server,
+		Since:  since.Unix(),
+	}); err != nil {
+		metrics.DbQueryErrors.WithLabelValues("RemoveMoviesNotSeenSince").Inc()
+		return err
+	}
+
+	metrics.DbQueriesTime.WithLabelValues("RemoveMoviesNotSeenSince").Observe(time.Since(start).Seconds())
+	return nil
+}
+
+func (q *SQLiteJellyDb) RemoveEpisodesNotSeenSince(ctx context.Context, server string, since time.Time) error {
+	start := time.Now()
+
+	if err := q.generated.RemoveEpisodesNotSeenSince(ctx, generated.RemoveEpisodesNotSeenSinceParams{
+		Server: server,
+		Since:  since.Unix(),
+	}); err != nil {
+		metrics.DbQueryErrors.WithLabelValues("RemoveEpisodesNotSeenSince").Inc()
+		return err
+	}
+
+	metrics.DbQueriesTime.WithLabelValues("RemoveEpisodesNotSeenSince").Observe(time.Since(start).Seconds())
+	return nil
 }
 
 func (q *SQLiteJellyDb) InsertMovies(ctx context.Context, server string, movies []jellyfin.Item) error {

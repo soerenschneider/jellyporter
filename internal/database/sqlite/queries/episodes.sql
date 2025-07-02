@@ -98,7 +98,8 @@ INSERT INTO
         watched_date,
         watched_progress,
         watched_position_ticks,
-        is_favorite
+        is_favorite,
+        last_seen
     )
 VALUES (
         sqlc.arg(server),
@@ -113,7 +114,8 @@ VALUES (
         sqlc.arg(watched_date),
         sqlc.arg(watched_progress),
         sqlc.arg(watched_position_ticks),
-        sqlc.arg(is_favorite)
+        sqlc.arg(is_favorite),
+        strftime('%s', 'now')
 )
 ON CONFLICT(server, local_id) DO UPDATE SET
         name = excluded.name,
@@ -126,4 +128,13 @@ ON CONFLICT(server, local_id) DO UPDATE SET
         watched_date = excluded.watched_date,
         watched_progress  = excluded.watched_progress,
         watched_position_ticks  = excluded.watched_position_ticks,
-        is_favorite = excluded.is_favorite;
+        is_favorite = excluded.is_favorite,
+        last_seen = strftime('%s', 'now');
+
+-- name: RemoveEpisodesNotSeenSince :exec
+DELETE FROM
+    episodes
+WHERE
+    server = sqlc.arg(server)
+AND
+    last_seen < sqlc.arg(since);

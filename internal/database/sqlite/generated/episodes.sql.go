@@ -152,7 +152,8 @@ INSERT INTO
         watched_date,
         watched_progress,
         watched_position_ticks,
-        is_favorite
+        is_favorite,
+        last_seen
     )
 VALUES (
         ?1,
@@ -167,7 +168,8 @@ VALUES (
         ?10,
         ?11,
         ?12,
-        ?13
+        ?13,
+        strftime('%s', 'now')
 )
 ON CONFLICT(server, local_id) DO UPDATE SET
         name = excluded.name,
@@ -180,7 +182,8 @@ ON CONFLICT(server, local_id) DO UPDATE SET
         watched_date = excluded.watched_date,
         watched_progress  = excluded.watched_progress,
         watched_position_ticks  = excluded.watched_position_ticks,
-        is_favorite = excluded.is_favorite
+        is_favorite = excluded.is_favorite,
+        last_seen = strftime('%s', 'now')
 `
 
 type InsertEpisodeParams struct {
@@ -215,5 +218,24 @@ func (q *Queries) InsertEpisode(ctx context.Context, arg InsertEpisodeParams) er
 		arg.WatchedPositionTicks,
 		arg.IsFavorite,
 	)
+	return err
+}
+
+const RemoveEpisodesNotSeenSince = `-- name: RemoveEpisodesNotSeenSince :exec
+DELETE FROM
+    episodes
+WHERE
+    server = ?1
+AND
+    last_seen < ?2
+`
+
+type RemoveEpisodesNotSeenSinceParams struct {
+	Server string
+	Since  int64
+}
+
+func (q *Queries) RemoveEpisodesNotSeenSince(ctx context.Context, arg RemoveEpisodesNotSeenSinceParams) error {
+	_, err := q.db.ExecContext(ctx, RemoveEpisodesNotSeenSince, arg.Server, arg.Since)
 	return err
 }

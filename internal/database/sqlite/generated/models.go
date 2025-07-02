@@ -34,6 +34,7 @@ type Episode struct {
 	WatchedProgress      float64
 	WatchedPositionTicks int64
 	IsFavorite           bool
+	LastSeen             int64
 }
 
 type Movie struct {
@@ -48,6 +49,7 @@ type Movie struct {
 	WatchedProgress      float64
 	WatchedPositionTicks int64
 	IsFavorite           bool
+	LastSeen             int64
 }
 
 type SchemaVersion struct {

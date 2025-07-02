@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS movies (
     watched_progress FLOAT NOT NULL,
     watched_position_ticks INTEGER NOT NULL,
     is_favorite BOOL NOT NULL,
+    last_seen INTEGER NOT NULL,
 
     UNIQUE (server, local_id)
 );
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS episodes (
     watched_progress REAL NOT NULL,
     watched_position_ticks INTEGER NOT NULL,
     is_favorite BOOL NOT NULL,
+    last_seen INTEGER NOT NULL,
 
     UNIQUE (server, local_id)
 );
