@@ -6,9 +6,10 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/mattn/go-sqlite3 v1.14.28
-	github.com/prometheus/client_golang v1.22.0
+	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/common v0.65.0
 	github.com/rs/zerolog v1.34.0
+	github.com/spf13/cobra v1.9.1
 	go.uber.org/multierr v1.11.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -47,11 +48,10 @@ require (
 	github.com/pingcap/log v1.1.0 // indirect
 	github.com/pingcap/tidb/pkg/parser v0.0.0-20250324122243-d51e00e5bbf0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/riza-io/grpc-go v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
-	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/sqlc-dev/sqlc v1.29.0 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
