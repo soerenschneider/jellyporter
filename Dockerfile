@@ -13,7 +13,7 @@ ENV CGO_ENABLED=1
 
 RUN CGO_ENABLED=${CGO_ENABLED} go build -ldflags="-w -X 'main.BuildVersion=${VERSION}' -X 'main.CommitHash=${COMMIT_HASH}' -X 'main.GoVersion=$(go version | awk '{print $3}' | sed 's/^go//')'" -o /jellyporter .
 
-FROM debian:13.1-slim AS final
+FROM debian:13.3-slim AS final
 
 LABEL maintainer="soerenschneider"
 RUN useradd -m -s /bin/bash jellyporter
